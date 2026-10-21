@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yamir Studio</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,sans-serif;-webkit-tap-highlight-color:transparent}
+        body{background:#0d1117;color:#e6edf3;padding:12px;max-width:480px;margin:0 auto}
+        .banner{background:#161b22;border:1px solid #ffd700;color:#ffd700;text-align:center;padding:10px;border-radius:8px;font-weight:700;margin-bottom:12px;font-size:1.1rem}
+        .btn-group{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+        .btn{padding:10px;border-radius:6px;font-weight:700;border:none;cursor:pointer;text-align:center;text-decoration:none;font-size:.85rem;transition:transform .1s,opacity .1s}
+        .btn:active{transform:scale(.96);opacity:.85}
+        .btn-red{background:#da3633;color:#fff}
+        .btn-gray{background:#21262d;color:#c9d1d9;border:1px solid #30363d}
+        .tabs{display:flex;gap:6px;margin-bottom:12px}
+        .tab-btn{flex:1;padding:10px;background:#21262d;color:#8b949e;border:1px solid #30363d;border-radius:6px;font-weight:700;cursor:pointer;transition:transform .1s}
+        .tab-btn:active{transform:scale(.96)}
+        .tab-btn.active{background:#238636;color:#fff;border-color:#2ea043}
+        .tab-btn.active-prem{background:#d29922;color:#000;border-color:#ffd700}
+        .card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px;margin-bottom:10px;text-align:center;cursor:pointer;transition:transform .1s}
+        .card:not(.blocked):active{transform:scale(.97)}
+        .card img{width:100%;height:160px;object-fit:cover;border-radius:6px;margin-bottom:8px;display:block;background:#0d1117}
+        .card-title{font-weight:700;font-size:.95rem;margin-bottom:6px;color:#f0f6fc}
+        .badge{display:inline-block;padding:3px 8px;border-radius:12px;font-size:.7rem;font-weight:700}
+        .badge-norm{background:rgba(46,160,67,.2);color:#3fb950;border:1px solid #2ea043}
+        .badge-prem{background:rgba(212,167,44,.2);color:#f2cc60;border:1px solid #d29922}
+        .badge-red{background:rgba(248,81,73,.2);color:#f85149;border:1px solid #f85149;margin-top:6px;display:block;padding:4px;border-radius:4px;font-size:.75rem}
+        .badge-yellow{background:rgba(210,153,34,.2);color:#d29922;border:1px solid #d29922;margin-top:6px;display:block;padding:4px;border-radius:4px;font-size:.75rem}
+        .blocked{opacity:.6;cursor:not-allowed}
+        .step-box{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;margin-top:10px}
+        .step-btn{background:#0d1117;border:1px solid #30363d;color:#fff;padding:12px;border-radius:6px;font-weight:700;cursor:pointer;width:100%;margin-bottom:6px;transition:transform .1s}
+        .step-btn:active{transform:scale(.97)}
+        .step-btn.done{border-color:#2ea043;color:#3fb950;background:rgba(46,160,67,.1)}
+        code{background:#0d1117;border:1px dashed #2ea043;color:#3fb950;padding:12px;border-radius:6px;font-size:.75rem;word-break:break-all;white-space:pre-wrap;display:block}
+        .hidden{display:none!important}
+    </style>
+</head>
+<body>
+
+    <div id="maint-screen" class="hidden" style="text-align:center;padding:40px 10px;">
+        <h2 style="color:#f85149">MANTENIMIENTO GENERAL</h2>
+        <p style="color:#8b949e;margin-top:10px">La página se encuentra en mantenimiento.</p>
+    </div>
+
+    <!-- PÁGINA PRINCIPAL DE SCRIPTS -->
+    <div id="app-screen">
+        <div class="banner">YAMIR STUDIO</div>
+
+        <div class="btn-group">
+            <button class="btn btn-red" onclick="alert('Completa los pasos interactuando con los enlaces para obtener tu script.')">🎥 ¿CÓMO USAR?</button>
+            <a href="https://discord.gg" target="_blank" class="btn btn-gray">🚩 REPORTAR ERROR</a>
+        </div>
+
+        <div class="tabs">
+            <button id="tb-free" class="tab-btn active" onclick="switchTab('free')">NORMAL</button>
+            <button id="tb-prem" class="tab-btn" onclick="switchTab('prem')">PREMIUM ⭐</button>
+        </div>
+
+        <div id="list-free"></div>
+        <div id="list-prem" class="hidden"></div>
+    </div>
+
+    <!-- VISTA DE PASOS (NUEVA PESTAÑA) -->
+    <div id="step-screen" class="hidden">
+        <div class="banner">YAMIR STUDIO</div>
+        <button class="btn btn-gray" onclick="window.close(); if(!window.closed) location.href=location.pathname;">← Volver</button>
+        <div class="step-box">
+            <h3 id="st-title" style="text-align:center;color:#f0f6fc">Cargando...</h3>
+            <div id="st-phase" style="text-align:center;color:#3fb950;font-weight:700">FASE 1</div>
+            <div id="st-g1"></div>
+            <div id="st-g2" class="hidden"></div>
+            <div id="st-final" class="hidden">
+                <code id="script-code"></code>
+                <button class="btn btn-red" style="width:100%;margin-top:10px;background:#238636" onclick="copyScript()">COPIAR SCRIPT</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SHEET_ID="1Ijxd38344GIdnPBK1693SLE7KmOxy59CTorchrxe5og";
+        const CSV_URL=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&cachebuster=`+Date.now();
+        const AD_URL="Https://omg10.com/4/10022394";
+
+        const store={};
+        let activeScript="",clicks=0,targetClicks=0,waitSecs=6;
+        let lastBtn=null,clickTime=0,isPhase2=false;
+
+        const urlParams=new URLSearchParams(window.location.search);
+        const scriptParam=urlParams.get('s');
+
+        function clean(v){return v?v.trim().replace(/^"|"$/g,'').replace(/""/g,'"'):""}
+
+        function processImgUrl(url){
+            if(!url)return"";
+            url=url.trim();
+            if(url.includes("drive.google.com")){
+                const m=url.match(/\/d\/([a-zA-Z0-9_-]+)/)||url.match(/id=([a-zA-Z0-9_-]+)/);
+                if(m&&m[1])return`https://drive.google.com/uc?export=view&id=${m[1]}`;
+            }
+            return url;
+        }
+
+        async function init(){
+            try{
+                const res=await fetch(CSV_URL);
+                const text=await res.text();
+                const rows=text.split("\n");
+                
+                const globalAlerts=rows.slice(1).map(r=>clean(r.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/)[6]).toLowerCase());
+                if(globalAlerts.some(a=>a.includes("mantenimiento página")||a.includes("mantenimiento pagina"))){
+                    document.getElementById("app-screen").classList.add("hidden");
+                    document.getElementById("step-screen").classList.add("hidden");
+                    document.getElementById("maint-screen").classList.remove("hidden");
+                    return;
+                }
+
+                let idCounter=0;
+                rows.slice(1).forEach(row=>{
+                    const cols=row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                    if(cols.length<3)return;
+
+                    let name=clean(cols[0]),rawImg=clean(cols[1]),imgUrl=processImgUrl(rawImg);
+                    let code=clean(cols[2]),ver=clean(cols[3]),ads=clean(cols[5]),aviso=clean(cols[6]);
+                    if(!name||!code)return;
+
+                    const id="s"+(++idCounter);
+                    const isPrem=ver.toLowerCase().includes("premium");
+                    let reqClicks=parseInt(ads)||(isPrem?7:5);
+
+                    store[id]={id,name,code,reqClicks,waitSecs:isPrem?8:6,hasAds:ads.toLowerCase()!=="no"};
+
+                    let alertHtml="",isBlocked=false,nLow=name.toLowerCase();
+
+                    if(aviso.toLowerCase().includes("mantenimiento")||globalAlerts.some(g=>g.includes("mantenimiento")&&g.includes(nLow))){
+                        alertHtml='<span class="badge badge-yellow">EN MANTENIMIENTO</span>';
+                        isBlocked=true;
+                    }else if(aviso.toLowerCase().includes("parcheado")||aviso.toLowerCase().includes("no funciona")||globalAlerts.some(g=>(g.includes("parcheado")||g.includes("no funciona"))&&g.includes(nLow))){
+                        alertHtml='<span class="badge badge-red">PARCHEADO / NO FUNCIONA</span>';
+                        isBlocked=true;
+                    }
+
+                    const card=document.createElement("div");
+                    card.className="card "+(isBlocked?"blocked":"");
+                    // Abre los pasos directamente en una NUEVA PESTAÑA
+                    card.onclick=()=>!isBlocked&&window.open(`${location.pathname}?s=${id}`,'_blank');
+
+                    const imgTag=imgUrl?`<img src="${imgUrl}" alt="${name}" referrerpolicy="no-referrer" onerror="this.style.display='none'">`:'';
+
+                    card.innerHTML=`${imgTag}<div class="card-title">${name}</div><span class="badge ${isPrem?'badge-prem':'badge-norm'}">${isPrem?'PREMIUM':'NORMAL'}</span>${alertHtml}`;
+
+                    document.getElementById(isPrem?"list-prem":"list-free").appendChild(card);
+                });
+
+                // Si la página fue abierta como nueva pestaña con un script seleccionado (?s=id)
+                if(scriptParam){
+                    document.getElementById("app-screen").classList.add("hidden");
+                    document.getElementById("step-screen").classList.remove("hidden");
+                    openStepView(scriptParam);
+                }
+
+            }catch(e){
+                if(!scriptParam) document.getElementById("list-free").innerHTML="<p style='text-align:center;color:#f85149;'>Error de carga.</p>";
+            }
+        }
+
+        function switchTab(type){
+            document.getElementById("list-free").classList.toggle("hidden",type!=='free');
+            document.getElementById("list-prem").classList.toggle("hidden",type!=='prem');
+            document.getElementById("tb-free").className="tab-btn "+(type==='free'?'active':'');
+            document.getElementById("tb-prem").className="tab-btn "+(type==='prem'?'active-prem':'');
+        }
+
+        function openStepView(id){
+            const data=store[id];
+            if(!data){
+                document.getElementById("st-title").innerText="Script no encontrado";
+                return;
+            }
+            activeScript=data.code;
+            targetClicks=data.reqClicks;
+            waitSecs=data.waitSecs;
+            clicks=0;isPhase2=false;
+
+            document.getElementById("st-title").innerText=data.name;
+
+            if(!data.hasAds){
+                document.getElementById("st-phase").classList.add("hidden");
+                document.getElementById("st-g1").classList.add("hidden");
+                document.getElementById("st-g2").classList.add("hidden");
+                document.getElementById("st-final").classList.remove("hidden");
+                document.getElementById("script-code").innerText=activeScript;
+                return;
+            }
+
+            document.getElementById("st-phase").innerText="FASE 1";
+            document.getElementById("st-phase").classList.remove("hidden");
+            document.getElementById("st-g1").classList.remove("hidden");
+            document.getElementById("st-g2").classList.add("hidden");
+            document.getElementById("st-final").classList.add("hidden");
+
+            genBtns("st-g1",targetClicks,"Paso");
+        }
+
+        function genBtns(containerId,count,label){
+            const cont=document.getElementById(containerId);
+            cont.innerHTML="";
+            for(let i=1;i<=count;i++){
+                cont.innerHTML+=`<button class="step-btn" onclick="doAd(this)">${label} ${i}</button>`;
+            }
+        }
+
+        function doAd(btn){
+            if(btn.classList.contains("done"))return;
+            lastBtn=btn;
+            clickTime=Date.now();
+            window.open(AD_URL,'_blank');
+            btn.innerText="⏳ Esperando...";
+        }
+
+        window.onfocus=()=>{
+            if(lastBtn&&clickTime>0){
+                if((Date.now()-clickTime)/1000>=waitSecs){
+                    lastBtn.classList.add("done");
+                    lastBtn.innerText="✅ COMPLETADO";
+                    clicks++;
+                    if(clicks>=targetClicks){
+                        if(!isPhase2){
+                            isPhase2=true;clicks=0;
+                            document.getElementById("st-phase").innerText="FASE 2";
+                            document.getElementById("st-g1").classList.add("hidden");
+                            document.getElementById("st-g2").classList.remove("hidden");
+                            genBtns("st-g2",targetClicks,"Verificación");
+                        }else{
+                            document.getElementById("st-phase").classList.add("hidden");
+                            document.getElementById("st-g2").classList.add("hidden");
+                            document.getElementById("st-final").classList.remove("hidden");
+                            document.getElementById("script-code").innerText=activeScript;
+                        }
+                    }
+                }else{
+                    alert("⚠️ Debes permanecer "+waitSecs+" segundos en el enlace.");
+                    lastBtn.innerText="Reintentar";
+                }
+                lastBtn=null;clickTime=0;
+            }
+        };
+
+        function copyScript(){
+            navigator.clipboard.writeText(activeScript);
+            alert("¡Script copiado!");
+        }
+
+        init();
+    </script>
+</body>
+</html>
+
