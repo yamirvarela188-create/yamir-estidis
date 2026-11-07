@@ -34,12 +34,13 @@
         .step-btn.done{border-color:#2ea043;color:#3fb950;background:rgba(46,160,67,.1)}
         code{background:#0d1117;border:1px dashed #2ea043;color:#3fb950;padding:12px;border-radius:6px;font-size:.75rem;word-break:break-all;white-space:pre-wrap;display:block}
         
-        /* MODAL DE TUTORIAL Y ETIQUETA DISCRETA DE CREADOR */
-        .modal-bg{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:16px;z-index:999}
-        .modal-box{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:16px;max-width:400px;width:100%;color:#e6edf3}
-        .modal-box h3{color:#ffd700;margin-bottom:10px;text-align:center}
-        .modal-box ol{padding-left:20px;font-size:.85rem;line-height:1.5;color:#c9d1d9}
-        .modal-box ol li{margin-bottom:8px}
+        /* REPRODUCTOR FLOTANTE DE VIDEO */
+        .video-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:16px;z-index:9999}
+        .video-container{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:12px;width:100%;max-width:340px;position:relative;text-align:center}
+        .close-video-btn{position:absolute;top:8px;right:8px;background:#da3633;color:#fff;border:none;width:32px;height:32px;border-radius:50%;font-weight:700;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+        .close-video-btn:active{transform:scale(.9)}
+        .video-wrapper{position:relative;width:100%;padding-top:177.77%;border-radius:8px;overflow:hidden;background:#000;margin-top:10px}
+        .video-wrapper iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none}
 
         .tag-owner{position:absolute;top:10px;left:10px;font-size:.65rem;font-weight:700;opacity:.7}
         .tag-yamir{color:#3fb950}
@@ -59,7 +60,7 @@
         <div class="banner">YAMIR STUDIO</div>
 
         <div class="btn-group">
-            <button class="btn btn-red" onclick="openTutorial()">🎥 ¿CÓMO USAR?</button>
+            <button class="btn btn-red" onclick="openVideoModal()">🎥 ¿CÓMO USAR?</button>
             <a href="https://yamirvarela188-create.github.io/Reporte-/" target="_blank" class="btn btn-gray">🚩 REPORTAR ERROR</a>
         </div>
 
@@ -89,19 +90,14 @@
         </div>
     </div>
 
-    <!-- MODAL DE TUTORIAL EN PANTALLA -->
-    <div id="tutorial-modal" class="modal-bg hidden">
-        <div class="modal-box">
-            <h3>🎥 ¿Cómo usar Yamir Studio?</h3>
-            <ol>
-                <li>Elige tu script preferido (Normal o Premium).</li>
-                <li>Toca la tarjeta del script para abrir los pasos.</li>
-                <li>Haz clic en cada botón de <b>Paso</b> para abrir el enlace.</li>
-                <li>Permanece en el enlace durante los segundos indicados (6 u 8 segundos).</li>
-                <li>Vuelve a esta pestaña para ir completando la <b>Fase 1</b> y la <b>Fase 2</b>.</li>
-                <li>¡Listo! Copia tu script final y disfrútalo en tu juego.</li>
-            </ol>
-            <button class="btn btn-gray" style="width:100%;margin-top:10px" onclick="closeTutorial()">CERRAR</button>
+    <!-- MODAL DE REPRODUCTOR DE VIDEO CON BOTÓN X -->
+    <div id="video-modal" class="video-modal hidden">
+        <div class="video-container">
+            <button class="close-video-btn" onclick="closeVideoModal()">✕</button>
+            <h3 style="color:#ffd700;font-size:0.95rem;margin-top:4px;">¿Cómo usar Yamir Studio?</h3>
+            <div class="video-wrapper">
+                <iframe id="youtube-iframe" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
         </div>
     </div>
 
@@ -362,12 +358,19 @@
             alert("¡Script copiado!");
         }
 
-        function openTutorial(){
-            document.getElementById("tutorial-modal").classList.remove("hidden");
+        // FUNCIONES PARA CONTROLAR EL VIDEO FLOTANTE
+        function openVideoModal() {
+            const iframe = document.getElementById("youtube-iframe");
+            // Se usa el formato embed y autoplay=1 para que cargue y suene al instante
+            iframe.src = "https://www.youtube.com/embed/9Pk57CI91M0?autoplay=1";
+            document.getElementById("video-modal").classList.remove("hidden");
         }
 
-        function closeTutorial(){
-            document.getElementById("tutorial-modal").classList.add("hidden");
+        function closeVideoModal() {
+            const iframe = document.getElementById("youtube-iframe");
+            // Al vaciar el src, el video se detiene por completo y deja de sonar
+            iframe.src = "";
+            document.getElementById("video-modal").classList.add("hidden");
         }
 
         init();
