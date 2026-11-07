@@ -28,11 +28,22 @@
         .badge-red{background:rgba(248,81,73,.2);color:#f85149;border:1px solid #f85149;margin-top:6px;display:block;padding:4px;border-radius:4px;font-size:.75rem}
         .badge-yellow{background:rgba(210,153,34,.2);color:#d29922;border:1px solid #d29922;margin-top:6px;display:block;padding:4px;border-radius:4px;font-size:.75rem}
         .blocked{opacity:.6;cursor:not-allowed}
-        .step-box{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;margin-top:10px}
+        .step-box{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;margin-top:10px;position:relative}
         .step-btn{background:#0d1117;border:1px solid #30363d;color:#fff;padding:12px;border-radius:6px;font-weight:700;cursor:pointer;width:100%;margin-bottom:6px;transition:transform .1s}
         .step-btn:active{transform:scale(.97)}
         .step-btn.done{border-color:#2ea043;color:#3fb950;background:rgba(46,160,67,.1)}
         code{background:#0d1117;border:1px dashed #2ea043;color:#3fb950;padding:12px;border-radius:6px;font-size:.75rem;word-break:break-all;white-space:pre-wrap;display:block}
+        
+        /* MODAL DE TUTORIAL Y ETIQUETA DISCRETA DE CREADOR */
+        .modal-bg{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:16px;z-index:999}
+        .modal-box{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:16px;max-width:400px;width:100%;color:#e6edf3}
+        .modal-box h3{color:#ffd700;margin-bottom:10px;text-align:center}
+        .modal-box ol{padding-left:20px;font-size:.85rem;line-height:1.5;color:#c9d1d9}
+        .modal-box ol li{margin-bottom:8px}
+
+        .tag-owner{position:absolute;top:10px;left:10px;font-size:.65rem;font-weight:700;opacity:.7}
+        .tag-yamir{color:#3fb950}
+        .tag-steven{color:#f85149}
         .hidden{display:none!important}
     </style>
 </head>
@@ -48,8 +59,8 @@
         <div class="banner">YAMIR STUDIO</div>
 
         <div class="btn-group">
-            <button class="btn btn-red" onclick="alert('Completa los pasos interactuando con los enlaces para obtener tu script.')">🎥 ¿CÓMO USAR?</button>
-            <a href="https://discord.gg" target="_blank" class="btn btn-gray">🚩 REPORTAR ERROR</a>
+            <button class="btn btn-red" onclick="openTutorial()">🎥 ¿CÓMO USAR?</button>
+            <a href="reportes.html" class="btn btn-gray">🚩 REPORTAR ERROR</a>
         </div>
 
         <div class="tabs">
@@ -61,12 +72,13 @@
         <div id="list-prem" class="hidden"></div>
     </div>
 
-    <!-- VISTA DE PASOS (NUEVA PESTAÑA) -->
+    <!-- VISTA DE PASOS -->
     <div id="step-screen" class="hidden">
         <div class="banner">YAMIR STUDIO</div>
-        <button class="btn btn-gray" onclick="window.close(); if(!window.closed) location.href=location.pathname;">← Volver</button>
+        <button class="btn btn-gray" style="width:100%" onclick="closeStepView()">← Volver a la lista</button>
         <div class="step-box">
-            <h3 id="st-title" style="text-align:center;color:#f0f6fc">Cargando...</h3>
+            <span id="owner-tag" class="tag-owner"></span>
+            <h3 id="st-title" style="text-align:center;color:#f0f6fc;margin-top:8px">Cargando...</h3>
             <div id="st-phase" style="text-align:center;color:#3fb950;font-weight:700">FASE 1</div>
             <div id="st-g1"></div>
             <div id="st-g2" class="hidden"></div>
@@ -77,14 +89,34 @@
         </div>
     </div>
 
+    <!-- MODAL DE TUTORIAL EN PANTALLA -->
+    <div id="tutorial-modal" class="modal-bg hidden">
+        <div class="modal-box">
+            <h3>🎥 ¿Cómo usar Yamir Studio?</h3>
+            <ol>
+                <li>Elige tu script preferido (Normal o Premium).</li>
+                <li>Toca la tarjeta del script para abrir los pasos.</li>
+                <li>Haz clic en cada botón de <b>Paso</b> para abrir el enlace.</li>
+                <li>Permanece en el enlace durante los segundos indicados (6 u 8 segundos).</li>
+                <li>Vuelve a esta pestaña para ir completando la <b>Fase 1</b> y la <b>Fase 2</b>.</li>
+                <li>¡Listo! Copia tu script final y disfrútalo en tu juego.</li>
+            </ol>
+            <button class="btn btn-gray" style="width:100%;margin-top:10px" onclick="closeTutorial()">CERRAR</button>
+        </div>
+    </div>
+
     <script>
         const SHEET_ID="1Ijxd38344GIdnPBK1693SLE7KmOxy59CTorchrxe5og";
         const CSV_URL=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&cachebuster=`+Date.now();
-        const AD_URL="Https://omg10.com/4/10022394";
+        
+        // ENLACES CON DISTRIBUCIÓN PONDERADA (YAMIR 90% / STEVEN 30%)
+        const AD_YAMIR = "https://uplcm.com/4/11169505";
+        const AD_STEVEN = "https://uplcm.com/4/10022394";
 
         const store={};
         let activeScript="",clicks=0,targetClicks=0,waitSecs=6;
         let lastBtn=null,clickTime=0,isPhase2=false;
+        let currentAdUrl = "";
 
         const urlParams=new URLSearchParams(window.location.search);
         const scriptParam=urlParams.get('s');
@@ -142,8 +174,7 @@
 
                     const card=document.createElement("div");
                     card.className="card "+(isBlocked?"blocked":"");
-                    // Abre los pasos directamente en una NUEVA PESTAÑA
-                    card.onclick=()=>!isBlocked&&window.open(`${location.pathname}?s=${id}`,'_blank');
+                    card.onclick=()=>!isBlocked&&openStepView(id);
 
                     const imgTag=imgUrl?`<img src="${imgUrl}" alt="${name}" referrerpolicy="no-referrer" onerror="this.style.display='none'">`:'';
 
@@ -152,10 +183,7 @@
                     document.getElementById(isPrem?"list-prem":"list-free").appendChild(card);
                 });
 
-                // Si la página fue abierta como nueva pestaña con un script seleccionado (?s=id)
                 if(scriptParam){
-                    document.getElementById("app-screen").classList.add("hidden");
-                    document.getElementById("step-screen").classList.remove("hidden");
                     openStepView(scriptParam);
                 }
 
@@ -182,7 +210,24 @@
             waitSecs=data.waitSecs;
             clicks=0;isPhase2=false;
 
+            // SISTEMA DE PROBABILIDAD (90% YAMIR / 30% STEVEN)
+            const rand = Math.random() * 120;
+            const tagEl = document.getElementById("owner-tag");
+
+            if (rand < 90) {
+                currentAdUrl = AD_YAMIR;
+                tagEl.innerText = "Yamir";
+                tagEl.className = "tag-owner tag-yamir";
+            } else {
+                currentAdUrl = AD_STEVEN;
+                tagEl.innerText = "Steven";
+                tagEl.className = "tag-owner tag-steven";
+            }
+
             document.getElementById("st-title").innerText=data.name;
+
+            document.getElementById("app-screen").classList.add("hidden");
+            document.getElementById("step-screen").classList.remove("hidden");
 
             if(!data.hasAds){
                 document.getElementById("st-phase").classList.add("hidden");
@@ -200,6 +245,12 @@
             document.getElementById("st-final").classList.add("hidden");
 
             genBtns("st-g1",targetClicks,"Paso");
+            window.scrollTo(0,0);
+        }
+
+        function closeStepView(){
+            document.getElementById("step-screen").classList.add("hidden");
+            document.getElementById("app-screen").classList.remove("hidden");
         }
 
         function genBtns(containerId,count,label){
@@ -214,7 +265,7 @@
             if(btn.classList.contains("done"))return;
             lastBtn=btn;
             clickTime=Date.now();
-            window.open(AD_URL,'_blank');
+            window.open(currentAdUrl,'_blank');
             btn.innerText="⏳ Esperando...";
         }
 
@@ -251,8 +302,16 @@
             alert("¡Script copiado!");
         }
 
+        function openTutorial(){
+            document.getElementById("tutorial-modal").classList.remove("hidden");
+        }
+
+        function closeTutorial(){
+            document.getElementById("tutorial-modal").classList.add("hidden");
+        }
+
         init();
     </script>
 </body>
-</html>
-
+    </html>
+    
