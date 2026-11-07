@@ -60,7 +60,7 @@
 
         <div class="btn-group">
             <button class="btn btn-red" onclick="openTutorial()">🎥 ¿CÓMO USAR?</button>
-            <a href="reportes.html" class="btn btn-gray">🚩 REPORTAR ERROR</a>
+            <a href="https://yamirvarela188-create.github.io/Reporte-/" target="_blank" class="btn btn-gray">🚩 REPORTAR ERROR</a>
         </div>
 
         <div class="tabs">
@@ -139,7 +139,7 @@
                 const text=await res.text();
                 const rows=text.split("\n");
                 
-                const globalAlerts=rows.slice(1).map(r=>clean(r.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/)[6]).toLowerCase());
+                const globalAlerts=rows.slice(1).map(r=>clean(r.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/)[6]||"").toLowerCase());
                 if(globalAlerts.some(a=>a.includes("mantenimiento página")||a.includes("mantenimiento pagina"))){
                     document.getElementById("app-screen").classList.add("hidden");
                     document.getElementById("step-screen").classList.add("hidden");
@@ -147,13 +147,17 @@
                     return;
                 }
 
+                let freeItems = [];
+                let premItems = [];
+
                 let idCounter=0;
-                rows.slice(1).forEach(row=>{
+                rows.slice(1).forEach((row, index)=>{
                     const cols=row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                     if(cols.length<3)return;
 
                     let name=clean(cols[0]),rawImg=clean(cols[1]),imgUrl=processImgUrl(rawImg);
-                    let code=clean(cols[2]),ver=clean(cols[3]),ads=clean(cols[5]),aviso=clean(cols[6]);
+                    let code=clean(cols[2]),ver=clean(cols[3]||""),ordenCmd=clean(cols[4]||"").toLowerCase();
+                    let ads=clean(cols[5]||""),aviso=clean(cols[6]||"");
                     if(!name||!code)return;
 
                     const id="s"+(++idCounter);
@@ -177,11 +181,67 @@
                     card.onclick=()=>!isBlocked&&openStepView(id);
 
                     const imgTag=imgUrl?`<img src="${imgUrl}" alt="${name}" referrerpolicy="no-referrer" onerror="this.style.display='none'">`:'';
+                    const titleTag=`<div class="card-title">${name}</div>`;
+                    const badgeType=`<span class="badge ${isPrem?'badge-prem':'badge-norm'}">${isPrem?'PREMIUM':'NORMAL'}</span>`;
 
-                    card.innerHTML=`${imgTag}<div class="card-title">${name}</div><span class="badge ${isPrem?'badge-prem':'badge-norm'}">${isPrem?'PREMIUM':'NORMAL'}</span>${alertHtml}`;
+                    // COMANDOS DE POSICIÓN DE LA IMAGEN DENTRO DE LA TARJETA
+                    if(ordenCmd.includes("abajo del nombre") || ordenCmd.includes("abajo de el nombre")){
+                        card.innerHTML=`${titleTag}${imgTag}${badgeType}${alertHtml}`;
+                    } else {
+                        card.innerHTML=`${imgTag}${titleTag}${badgeType}${alertHtml}`;
+                    }
 
-                    document.getElementById(isPrem?"list-prem":"list-free").appendChild(card);
+                    // COMANDOS DE POSICIÓN GLOBAL EN LA LISTA
+                    let orderWeight = index; 
+                    if(ordenCmd === "arriba") orderWeight = -9998;
+                    if(ordenCmd === "primero") orderWeight = -9999 - index; // El último "primero" se va arriba del todo
+                    if(ordenCmd === "abajo") orderWeight = 9999;
+
+                    let relativeTarget = "";
+                    let relativePos = ""; // "before" o "after"
+
+                    if(ordenCmd.includes("arriba de ") && !ordenCmd.includes("el nombre")){
+                        relativeTarget = ordenCmd.replace("arriba de ", "").trim();
+                        relativePos = "before";
+                    } else if(ordenCmd.includes("abajo de ") && !ordenCmd.includes("el nombre")){
+                        relativeTarget = ordenCmd.replace("abajo de ", "").trim();
+                        relativePos = "after";
+                    }
+
+                    const itemObj = { id, name: nLow, card, orderWeight, relativeTarget, relativePos };
+                    
+                    if(isPrem){
+                        premItems.push(itemObj);
+                    }else{
+                        freeItems.push(itemObj);
+                    }
                 });
+
+                // Función para renderizar y ordenar relativas
+                function renderList(items, containerId){
+                    items.sort((a, b) => a.orderWeight - b.orderWeight);
+                    const container = document.getElementById(containerId);
+                    container.innerHTML = "";
+
+                    items.forEach(item => container.appendChild(item.card));
+
+                    // Reorganizar referencias de "arriba de X" o "abajo de X"
+                    items.forEach(item => {
+                        if(item.relativeTarget){
+                            const targetObj = items.find(i => i.name === item.relativeTarget || i.name.includes(item.relativeTarget));
+                            if(targetObj && targetObj.card.parentNode === container){
+                                if(item.relativePos === "before"){
+                                    container.insertBefore(item.card, targetObj.card);
+                                } else if(item.relativePos === "after"){
+                                    container.insertBefore(item.card, targetObj.card.nextSibling);
+                                }
+                            }
+                        }
+                    });
+                }
+
+                renderList(freeItems, "list-free");
+                renderList(premItems, "list-prem");
 
                 if(scriptParam){
                     openStepView(scriptParam);
@@ -313,5 +373,4 @@
         init();
     </script>
 </body>
-    </html>
-    
+</html>
